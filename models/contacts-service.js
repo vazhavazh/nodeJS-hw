@@ -1,23 +1,14 @@
-// ???????????????????????????????????????????????????????
-
-// import { readFile, writeFile } from 'fs/promises'; // ES6
-// import { join } from 'path'; // ES6
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-const fs = require("fs/promises");
-
-const path = require("path");
-
+const { writeFile, readFile } = require("fs/promises");
+const { join } = require("path");
 const { nanoid } = require("nanoid");
 
-const contactsPath = path.join(__dirname, "contacts.json");
+const contactsPath = join(__dirname, "contacts.json");
 
 const updateContacts = async (contacts) =>
-	await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+	await writeFile(contactsPath, JSON.stringify(contacts, null, 2));
 
 const listContacts = async () => {
-	const data = await fs.readFile(contactsPath);
+	const data = await readFile(contactsPath);
 	return JSON.parse(data);
 };
 
@@ -60,7 +51,7 @@ const updateContact = async (id, body) => {
 	}
 	contacts[id] = { id, ...body };
 	await updateContacts(contacts);
-	return contacts[id]
+	return contacts[id];
 };
 
 module.exports = {
@@ -68,5 +59,5 @@ module.exports = {
 	getById,
 	removeContact,
 	addContact,
-	updateContact
+	updateContact,
 };
