@@ -2,19 +2,21 @@ const { Router } = require("express");
 
 const contactController = require("../../controllers/contact-controller");
 
-// const schemas = require("../../schemas/contact-schema");
+const schemas = require("../../schemas/contact-schema");
 
-// const { validateBody } = require("../../utils")
+const { validateBody } = require("../../utils");
 
 const router = Router();
-
-
 
 router.get("/", contactController.getAllContacts);
 
 // router.get("/:id", contactController.getContactById);
 
-// router.post("/", validateBody(schemas.contactAddSchema), contactController.createNewContact);
+router.post(
+	"/",
+	validateBody(schemas.contactAddSchema),
+	contactController.createNewContact
+);
 
 // router.delete("/:id",contactController.deleteContactById);
 
