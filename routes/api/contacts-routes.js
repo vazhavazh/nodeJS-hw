@@ -7,8 +7,10 @@ const { schemas } = require("../../models/contacts");
 const { validateBody } = require("../../utils");
 
 const { isValidId } = require("../../middleware");
+const { authenticate } = require("../../middleware");
 
 const router = express.Router();
+router.use(authenticate);
 
 router.get("/", contactController.getAllContacts);
 

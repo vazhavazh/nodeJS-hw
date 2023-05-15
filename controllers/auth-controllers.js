@@ -58,3 +58,4 @@ module.exports = {
 	register: controllerWrapper(register),
 	login: controllerWrapper(login),
 };
+
