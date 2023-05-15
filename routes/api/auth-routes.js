@@ -15,11 +15,11 @@ router.post(
 	authControllers.register
 );
 
-module.exports = router;
-
-// ! signin
+// ! sign in
 router.post(
 	"/login",
 	validateBody(schemas.userLoginSchema),
 	authControllers.login
 );
+
+module.exports = router;

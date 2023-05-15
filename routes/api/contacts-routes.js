@@ -1,4 +1,4 @@
-const { Router } = require("express");
+const express = require("express");
 
 const contactController = require("../../controllers/contact-controller");
 
@@ -8,7 +8,7 @@ const { validateBody } = require("../../utils");
 
 const { isValidId } = require("../../middleware");
 
-const router = Router();
+const router = express.Router();
 
 router.get("/", contactController.getAllContacts);
 
