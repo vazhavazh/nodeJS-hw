@@ -5,7 +5,20 @@ const { HttpError } = require("../helpers");
 const { controllerWrapper } = require("../utils");
 
 const getAllContacts = async (req, res) => {
-	const result = await Contact.find({}, "-createdAt -updatedAt");
+	const { _id: owner } = req.user;
+	const { page = 1, limit = 10, favorite } = req.query;
+
+	const skip = (page - 1) * limit;
+	const query = { owner };
+
+	if (favorite) {
+		query.favorite = favorite === "true";
+	}
+
+	const result = await Contact.find(query, "-createdAt -updatedAt", {
+		skip,
+		limit,
+	}).populate("owner", "name email");
 
 	res.json(result);
 };
@@ -21,14 +34,14 @@ const getContactById = async (req, res) => {
 };
 
 const createNewContact = async (req, res, next) => {
-	const { name, email, phone, favorite = false } = req.body;
+	const { name, email, phone } = req.body;
 
 	const existingContact = await Contact.findOne({ name, email, phone });
 	if (existingContact) {
 		throw HttpError(409, ` "Contact with these fields already exists" `);
 	}
-
-	const result = await Contact.create({ name, email, phone, favorite });
+	const { _id: owner } = req.user;
+	const result = await Contact.create({ ...req.body, owner });
 	res.status(201).json(result);
 };
 

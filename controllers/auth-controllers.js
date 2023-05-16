@@ -6,6 +6,7 @@ const { User } = require("../models/user");
 const { HttpError } = require("../helpers");
 
 const { controllerWrapper } = require("../utils");
+const { trusted } = require("mongoose");
 
 const { SECRET_KEY } = process.env;
 
@@ -21,8 +22,8 @@ const register = async (req, res) => {
 	const result = await User.create({ ...req.body, password: hashPassword });
 
 	res.status(201).json({
-		name: result.name,
 		email: result.email,
+		subscription: result.subscription,
 	});
 };
 
@@ -30,32 +31,67 @@ const login = async (req, res) => {
 	const { email, password } = req.body;
 	const user = await User.findOne({ email });
 	if (!user) {
-		
-		throw HttpError(401, "email or password invalid");
+		throw HttpError(401, "Email or password is wrong");
 	}
 
 	const passwordCompare = await bcrypt.compare(password, user.password);
 	if (!passwordCompare) {
-		throw HttpError(401, "email or password invalid");
+		throw HttpError(401, "Email or password is wrong");
 	}
 
+	const { _id: id } = user;
+
 	const payload = {
-		id: user._id,
+		id,
 	};
 
 	const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "23h" });
 
+	await User.findByIdAndUpdate(id, { token });
+
 	res.json({
 		token,
 		user: {
-			name: user.name,
 			email: user.email,
+			subscription: user.subscription,
 		},
 	});
+};
+
+const getCurrent = async (req, res) => {
+	const { name, email } = req.user;
+
+	res.json({
+		user: {
+			name,
+			email,
+		},
+	});
+};
+
+const logout = async (req, res) => {
+	const { _id } = req.user;
+	await User.findByIdAndUpdate(_id, { token: "" });
+
+	res.status(204).json({
+		message: "No content",
+	});
+};
+
+const subscriptionUpdate = async (req, res) => {
+	const { _id } = req.user;
+	const result = await User.findByIdAndUpdate(_id, req.body, { new: trusted });
+	
+	if (!result) {
+		throw HttpError(404)
+	}
+	res.json(result);
 };
 
 module.exports = {
 	register: controllerWrapper(register),
 	login: controllerWrapper(login),
+	getCurrent: controllerWrapper(getCurrent),
+	logout: controllerWrapper(logout),
+	subscriptionUpdate: controllerWrapper(subscriptionUpdate),
 };
-
