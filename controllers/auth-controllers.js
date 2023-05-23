@@ -1,5 +1,8 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
 
 const { User } = require("../models/user");
 
@@ -19,7 +22,14 @@ const register = async (req, res) => {
 		throw HttpError(409, "Email already exist");
 	}
 	const hashPassword = await bcrypt.hash(password, 10);
-	const result = await User.create({ ...req.body, password: hashPassword });
+
+	const avatarURL = gravatar.url(email);
+
+	const result = await User.create({
+		...req.body,
+		password: hashPassword,
+		avatarURL,
+	});
 
 	res.status(201).json({
 		email: result.email,
@@ -81,11 +91,25 @@ const logout = async (req, res) => {
 const subscriptionUpdate = async (req, res) => {
 	const { _id } = req.user;
 	const result = await User.findByIdAndUpdate(_id, req.body, { new: trusted });
-	
+
 	if (!result) {
-		throw HttpError(404)
+		throw HttpError(404);
 	}
 	res.json(result);
+};
+
+const avatarsDir = path.resolve("public", "avatars");
+
+const updateAvatar = async (req, res) => {
+	const { path: tempUpload, filename } = req.file;
+	const resultUpload = path.join(avatarsDir, filename);
+	await fs.rename(tempUpload, resultUpload);
+	const avatarURL = path.join("avatars", filename);
+	await User.findByIdAndUpdate(req.user._id, { avatarURL });
+	
+	res.json({
+		avatarURL
+	})
 };
 
 module.exports = {
@@ -94,4 +118,5 @@ module.exports = {
 	getCurrent: controllerWrapper(getCurrent),
 	logout: controllerWrapper(logout),
 	subscriptionUpdate: controllerWrapper(subscriptionUpdate),
+	updateAvatar: controllerWrapper(updateAvatar),
 };
