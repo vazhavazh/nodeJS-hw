@@ -1,17 +1,16 @@
+
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
-
-const { User } = require("../models/user");
-
-const { HttpError } = require("../helpers");
-
-const { controllerWrapper } = require("../utils");
+const { nanoid } = require("nanoid");
 const { trusted } = require("mongoose");
-
-const { SECRET_KEY } = process.env;
+const { User } = require("../models/user");
+const { HttpError, sendEmail } = require("../helpers");
+const { controllerWrapper } = require("../utils");
+require("dotenv").config();
+const { SECRET_KEY, BASE_URL } = process.env;
 
 const register = async (req, res) => {
 	const { email, password } = req.body;
@@ -25,11 +24,54 @@ const register = async (req, res) => {
 
 	const avatarURL = gravatar.url(email);
 
+	const verificationCode = nanoid();
+
 	const result = await User.create({
 		...req.body,
 		password: hashPassword,
 		avatarURL,
+		verificationCode
 	});
+
+	const verifyEmail = {
+		to: email,
+		subject: "Verify email",
+		html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${verificationCode}"> Click verify email</a>`,
+	};
+
+	// await sendEmail(verifyEmail)
+	const mailjet = require('node-mailjet')
+		.connect('****************************1234', '****************************abcd')
+	const request = mailjet
+		.post("send", { 'version': 'v3.1' })
+		.request({
+			"Messages": [
+				{
+					"From": {
+						"Email": "vazhachkimikocha@gmail.com",
+						"Name": "Va"
+					},
+					"To": [
+						{
+							"Email": "vazhachkimikocha@gmail.com",
+							"Name": "Va"
+						}
+					],
+					"Subject": "Greetings from Mailjet.",
+					"TextPart": "My first Mailjet email",
+					"HTMLPart": "<h3>Dear passenger 1, welcome to <a href='https://www.mailjet.com/'>Mailjet</a>!</h3><br />May the delivery force be with you!",
+					"CustomID": "AppGettingStartedTest"
+				}
+			]
+		})
+	request
+		.then((result) => {
+			console.log(result.body)
+		})
+		.catch((err) => {
+			console.log(err.statusCode)
+		})
+
 
 	res.status(201).json({
 		email: result.email,
@@ -37,10 +79,41 @@ const register = async (req, res) => {
 	});
 };
 
+const verify = async (req, res) => {
+	const { verificationCode } = req.params;
+	const user = await User.findOne({ verificationCode });
+	if (!user) {
+		throw HttpError(404);
+	}
+	await User.findByIdAndUpdate(user._id, {
+		verify: true,
+		verificationCode: "",
+	});
+	res.json({ message: "Verification successful" });
+};
+
+const resendVerifyEmail = async (req, res) => {
+	const { email } = req.body;
+	const user = await User.findOne({ email });
+	if (!user) {
+		throw HttpError(404);
+	}
+	if (user.verify) {
+		throw HttpError(400, "Verification has already been passed");
+	}
+	const verifyEmail = {
+		to: email,
+		subject: "Verify email",
+		html: `<a target="_blank" href="${BASE_URL}/api/auth/verify/${user.verificationCode}"> Click verify email</a>`,
+	};
+	await sendEmail(verifyEmail);
+	res.json({ message: "Verify email resend" });
+};
+
 const login = async (req, res) => {
 	const { email, password } = req.body;
 	const user = await User.findOne({ email });
-	if (!user) {
+	if (!user || !user.verify) {
 		throw HttpError(401, "Email or password is wrong");
 	}
 
@@ -106,7 +179,7 @@ const updateAvatar = async (req, res) => {
 	await fs.rename(tempUpload, resultUpload);
 	const avatarURL = path.join("avatars", filename);
 	await User.findByIdAndUpdate(req.user._id, { avatarURL });
-	
+
 	res.json({
 		avatarURL
 	})
@@ -114,6 +187,8 @@ const updateAvatar = async (req, res) => {
 
 module.exports = {
 	register: controllerWrapper(register),
+	verify: controllerWrapper(verify),
+	resendVerifyEmail: controllerWrapper(resendVerifyEmail),
 	login: controllerWrapper(login),
 	getCurrent: controllerWrapper(getCurrent),
 	logout: controllerWrapper(logout),
