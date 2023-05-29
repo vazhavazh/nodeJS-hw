@@ -9,23 +9,24 @@ const mailjet = new Mailjet({
 });
 
 const sendEmail = async (data) => {
-    await mailjet.post("send", { version: "v3.1" }).request({
+    await mailjet.post('send', { version: 'v3.1' }).request({
         Messages: [
             {
                 From: {
-                    Email: MJ_SENDER_EMAIL,
+                    Email: MJ_SENDER_EMAIL
                 },
                 To: [
                     {
                         Email: data.to,
-                    },
+                    }
                 ],
                 Subject: data.subject,
-                HTMLPart: data.html,
-            },
-        ],
+                HTMLPart: data.html
+            }
+        ]
     });
+
     return true;
-};
+}
 
 module.exports = sendEmail;

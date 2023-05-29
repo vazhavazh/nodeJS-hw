@@ -20,6 +20,11 @@ router.post(
 	authControllers.register
 );
 
+router.get("/verify/:verificationCode", authControllers.verify);
+
+router.post("/verify", validateBody(schemas.userEmailSchema), authControllers.resendVerifyEmail);
+
+
 // ! sign in
 router.post(
 	"/login",

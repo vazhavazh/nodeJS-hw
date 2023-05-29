@@ -63,10 +63,16 @@ const userUpdateSubscriptionSchema = Joi.object({
 		.required(),
 });
 
+const userEmailSchema = Joi.object({
+	email: Joi.string().pattern(emailRegExp).required(),
+});
+
+
 const schemas = {
 	userRegisterSchema,
 	userLoginSchema,
 	userUpdateSubscriptionSchema,
+	userEmailSchema,
 };
 
 const User = model("user", userSchema);
