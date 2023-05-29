@@ -4,6 +4,7 @@ const Joi = require("joi");
 
 const { handleMongooseError } = require("../utils");
 
+
 const emailRegExp = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
 
 const subscriptionList = ["starter", "pro", "business"];
@@ -32,6 +33,14 @@ const userSchema = new Schema(
 			type: String,
 			required: true,
 		},
+		verify: {
+			type: Boolean,
+			default: false,
+		},
+		verificationCode: {
+			type: String,
+			default: "",
+		},
 	},
 	{ versionKey: false, timestamps: true }
 );
@@ -54,10 +63,16 @@ const userUpdateSubscriptionSchema = Joi.object({
 		.required(),
 });
 
+const userEmailSchema = Joi.object({
+	email: Joi.string().pattern(emailRegExp).required(),
+});
+
+
 const schemas = {
 	userRegisterSchema,
 	userLoginSchema,
 	userUpdateSubscriptionSchema,
+	userEmailSchema,
 };
 
 const User = model("user", userSchema);

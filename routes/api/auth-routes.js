@@ -8,6 +8,9 @@ const { validateBody } = require("../../utils");
 
 const { authenticate, upload } = require("../../middleware");
 
+
+
+
 const router = express.Router();
 
 // ! signup
@@ -16,6 +19,11 @@ router.post(
 	validateBody(schemas.userRegisterSchema),
 	authControllers.register
 );
+
+router.get("/verify/:verificationCode", authControllers.verify);
+
+router.post("/verify", validateBody(schemas.userEmailSchema), authControllers.resendVerifyEmail);
+
 
 // ! sign in
 router.post(
